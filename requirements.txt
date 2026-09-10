@@ -1,0 +1,8 @@
+dotenv==0.9.9
+psycopg2==2.9.13
+psycopg2-binary==2.9.13
+PySide6==6.11.2
+PySide6_Addons==6.11.2
+PySide6_Essentials==6.11.2
+python-dotenv==1.2.3
+shiboken6==6.11.2

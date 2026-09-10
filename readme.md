@@ -19,10 +19,7 @@ A desktop point-of-sale (POS) interface built with Python, PySide6, and PostgreS
 
 - Python 3.10 or newer
 - PostgreSQL
-- The following Python packages:
-  - `PySide6`
-  - `psycopg2-binary`
-  - `python-dotenv`
+- Python dependencies listed in `requirements.txt`
 
 ## Installation
 
@@ -33,31 +30,21 @@ A desktop point-of-sale (POS) interface built with Python, PySide6, and PostgreS
 	.\.venv\Scripts\Activate.ps1
 	```
 
-2. Install the dependencies:
+2. Install the dependencies from `requirements.txt`:
 
 	```powershell
-	pip install PySide6 psycopg2-binary python-dotenv
+	pip install -r requirements.txt
 	```
 
 3. Create a PostgreSQL database for the application.
 
 4. Execute the SQL in `init.sql` against that database. It creates the `products` and `cupons` tables and inserts sample records.
 
-5. Create a `.env` file in the project directory:
-
-	```dotenv
-	host=localhost
-	port=5432
-	dbname=pos_database
-	user=postgres
-	password=your_postgres_password
-	```
-
-	The variable names are case-sensitive because they are read directly with `os.getenv()`.
+5. Configure the local database connection through a `.env` file before starting the application.
 
 ## Running the application
 
-With the virtual environment activated and PostgreSQL running, start the application with:
+With the virtual environment activated, the database configured, and PostgreSQL running, start the application with:
 
 ```powershell
 python pos_main.py
@@ -107,12 +94,13 @@ POS Interface/
 ├── init.sql         # Database schema and sample data
 ├── pos_main.py      # PySide6 UI and cart behavior
 ├── pos_style.qss    # Qt stylesheet and color tokens
+├── requirements.txt  # Python dependencies
 └── readme.md        # Project documentation
 ```
 
 ## How it works
 
-1. `pos_main.py` loads environment variables from `.env`.
+1. `pos_main.py` loads the database connection environment from `.env`.
 2. Two `DB_Connection` instances fetch products and coupons at startup.
 3. `ProductPanel` filters products and sends selected items to the cart.
 4. `CartPanel` renders quantities, subtotals, coupons, and totals.
@@ -122,11 +110,11 @@ POS Interface/
 
 ### PostgreSQL connection errors
 
-Check that PostgreSQL is running, the database exists, and every value in `.env` is correct. The `port` value should normally be `5432` unless PostgreSQL was configured differently.
+Check that PostgreSQL is running, the database exists, and the local `.env` configuration is correct.
 
 ### No products or coupons appear
 
-Confirm that `init.sql` was executed against the same database named by `dbname` in `.env`. Verify the table names `products` and `cupons` and check that they contain rows.
+Confirm that `init.sql` was executed against the database configured in `.env`. Verify the table names `products` and `cupons` and check that they contain rows.
 
 ### The stylesheet is not applied
 

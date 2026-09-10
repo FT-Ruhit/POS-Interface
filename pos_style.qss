@@ -1,0 +1,195 @@
+/* color tokens
+   bg:        #1e1e1e
+   surface:   #252526
+   surface-2: #2d2d2d
+   border:    #333333
+   text:      #e6e6e6
+   text-dim:  #9a9a9a
+   accent:    #0a84ff
+   danger:    #e5484d
+*/
+
+QWidget {
+    background-color: #1e1e1e;
+    color: #e6e6e6;
+    font-family: "Segoe UI", "Inter", sans-serif;
+    font-size: 13px;
+}
+
+#panelTitle {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ---- product panel (left) ---- */
+#productPanel {
+    background-color: #1e1e1e;
+    border-right: 1px solid #333333;
+}
+
+#searchBox {
+    background-color: #252526;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+#searchBox:focus {
+    border: 1px solid #0a84ff;
+}
+
+QPushButton[class="product-tile"] {
+    background-color: #252526;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+    font-weight: 600;
+}
+
+QPushButton[class="product-tile"]:hover {
+    background-color: #2d2d2d;
+    border: 1px solid #0a84ff;
+}
+
+QPushButton[class="product-tile"]:pressed {
+    background-color: #0a84ff;
+    color: white;
+}
+
+#manualForm {
+    background-color: #252526;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+#formTitle {
+    font-weight: 600;
+    color: #9a9a9a;
+}
+
+QLineEdit, QDoubleSpinBox, QSpinBox {
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    padding: 6px 8px;
+    min-height: 30px;
+}
+
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button,
+QSpinBox::up-button, QSpinBox::down-button {
+    width: 28px;
+    height: 15px;
+    border-left: 1px solid #333333;
+}
+
+QDoubleSpinBox::up-button, QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+}
+
+QDoubleSpinBox::up-arrow, QSpinBox::up-arrow {
+    image: url(spin_up.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QDoubleSpinBox::down-button, QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+}
+
+QDoubleSpinBox::down-arrow, QSpinBox::down-arrow {
+    image: url(spin_down.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QPushButton[class="secondary-button"] {
+    background-color: #2d2d2d;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    padding: 8px;
+    font-weight: 600;
+}
+
+QPushButton[class="secondary-button"]:hover {
+    background-color: #333333;
+}
+
+/* ---- cart panel (right) ---- */
+#cartPanel {
+    background-color: #1e1e1e;
+}
+
+QTableWidget {
+    background-color: #252526;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    gridline-color: #333333;
+}
+
+#originalPrice {
+    color: #9a9a9a;
+}
+
+#discountedPrice {
+    color: #0a84ff;
+    font-weight: 700;
+}
+
+QHeaderView::section {
+    background-color: #2d2d2d;
+    color: #9a9a9a;
+    border: none;
+    padding: 6px;
+    font-weight: 600;
+}
+
+QPushButton[class="qty-button"] {
+    background-color: #2d2d2d;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+}
+
+QPushButton[class="qty-button"]:hover {
+    background-color: #333333;
+}
+
+QPushButton[class="remove-button"] {
+    background-color: transparent;
+    border: none;
+    color: #e5484d;
+    font-weight: 700;
+}
+
+QPushButton[class="remove-button"]:hover {
+    color: white;
+    background-color: #e5484d;
+    border-radius: 4px;
+}
+
+#totalLabel {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#purchaseButton {
+    background-color: #0a84ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+#purchaseButton:hover {
+    background-color: #0968cc;
+}

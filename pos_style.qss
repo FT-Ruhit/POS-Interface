@@ -119,6 +119,33 @@ QPushButton[class="secondary-button"]:hover {
     background-color: #333333;
 }
 
+QPushButton[class="primary-button"] {
+    background-color: #0a84ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
+    font-weight: 700;
+}
+
+QPushButton[class="primary-button"]:hover {
+    background-color: #0968cc;
+}
+
+QPushButton[class="danger-button"] {
+    background-color: #2d2d2d;
+    border: 1px solid #e5484d;
+    border-radius: 6px;
+    color: #e5484d;
+    padding: 8px;
+    font-weight: 600;
+}
+
+QPushButton[class="danger-button"]:hover {
+    background-color: #e5484d;
+    color: white;
+}
+
 /* ---- cart panel (right) ---- */
 #cartPanel {
     background-color: #1e1e1e;

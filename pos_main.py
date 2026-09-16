@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
-    QSpinBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -38,54 +37,19 @@ SPACE_SM = 8
 SPACE_MD = 16
 SPACE_LG = 24
 
-# sample_cupon = [
-#     {"cuponcode": "SAVE10", "discount": 10},
-#     {"cuponcode": "WELCOME20", "discount": 20},
-# ]
-
-# --- hardcoded sample product data: swap this for a DB query later ---
-# SAMPLE_PRODUCTS = [
-#     {"code": "1001", "product_name": "Coffee", "price": 3.50},
-#     {"code": "1002", "product_name": "Sandwich", "price": 6.00},
-#     {"code": "1003", "product_name": "Croissant", "price": 2.75},
-#     {"code": "1004", "product_name": "Orange Juice", "price": 3.00},
-#     {"code": "1005", "product_name": "Muffin", "price": 2.50},
-#     {"code": "1006", "product_name": "Bottled Water", "price": 1.50},
-#     {"code": "1007", "product_name": "Bagel", "price": 2.25},
-#     {"code": "1008", "product_name": "Iced Tea", "price": 3.25},
-# ]
-
-with DB_Connection(
-    table="products",
-    **conn_params
-) as db:
-    SAMPLE_PRODUCTS = db.fetch_data()
-with DB_Connection(
-    table='cupons',
-    **conn_params
-) as db:
-    sample_cupon = db.fetch_data()
 
 
-
-class ProductTile(QPushButton):
-    """A clickable product card in the grid."""
-
-    def __init__(self, product: dict, on_click):
-        super().__init__(f"{product['product_name']}\n${product['price']:.2f}")
-        self.product = product
-        self.setProperty("class", "product-tile")
-        self.setMinimumHeight(70)
-        self.setCursor(Qt.PointingHandCursor)
-        self.clicked.connect(lambda: on_click(product))
 
 
 class ProductPanel(QFrame):
-    """Left side: search/barcode entry, product grid, manual entry form."""
+    """Left side: add a product by its real DB code, add a one-off custom
+    item, or tap a quick-item tile — all three now go through the DB or
+    are explicitly marked as non-DB (CUSTOM-)."""
 
-    def __init__(self, on_add):
+    def __init__(self, on_add, conn_params):
         super().__init__()
         self.on_add = on_add
+        self.conn_params = conn_params
         self.setObjectName("productPanel")
 
         layout = QVBoxLayout(self)
@@ -96,93 +60,138 @@ class ProductPanel(QFrame):
         heading.setObjectName("panelTitle")
         layout.addWidget(heading)
 
-        # --- search / barcode field ---
-        self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText("Scan barcode or search by name…")
-        self.search_box.setObjectName("searchBox")
-        self.search_box.textChanged.connect(self._filter_grid)
-        self.search_box.returnPressed.connect(self._handle_scan)
-        layout.addWidget(self.search_box)
+        # --- add by real product code (looked up in the DB) ---
+        lookup_frame = QFrame()
+        lookup_frame.setObjectName("manualForm")
+        lookup_layout = QVBoxLayout(lookup_frame)
+        lookup_layout.setSpacing(SPACE_SM)
 
-        # --- product grid ---
-        self.grid_widget = QWidget()
-        self.grid_layout = QGridLayout(self.grid_widget)
-        self.grid_layout.setSpacing(SPACE_SM)
-        self.tiles: list[ProductTile] = []
-        for i, product in enumerate(SAMPLE_PRODUCTS):
-            tile = ProductTile(product, self.on_add)
-            self.tiles.append(tile)
-            self.grid_layout.addWidget(tile, i // 3, i % 3)
-        layout.addWidget(self.grid_widget)
+        lookup_title = QLabel("Add by code")
+        lookup_title.setObjectName("formTitle")
+        lookup_layout.addWidget(lookup_title)
+
+        lookup_row = QHBoxLayout()
+        self.item_code_input = QLineEdit()
+        self.item_code_input.setPlaceholderText("Product code")
+        self.item_code_input.returnPressed.connect(self._add_by_code)
+        lookup_row.addWidget(self.item_code_input, 2)
+
+        lookup_btn = QPushButton("Add")
+        lookup_btn.setProperty("class", "secondary-button")
+        lookup_btn.clicked.connect(self._add_by_code)
+        lookup_row.addWidget(lookup_btn, 1)
+        lookup_layout.addLayout(lookup_row)
+        layout.addWidget(lookup_frame)
+
+        # --- one-off custom item, explicitly not a DB lookup ---
+        custom_frame = QFrame()
+        custom_frame.setObjectName("manualForm")
+        custom_layout = QVBoxLayout(custom_frame)
+        custom_layout.setSpacing(SPACE_SM)
+
+        custom_title = QLabel("Add custom item")
+        custom_title.setObjectName("formTitle")
+        custom_layout.addWidget(custom_title)
+
+        self.custom_name_input = QLineEdit()
+        self.custom_name_input.setPlaceholderText("Item name")
+        custom_layout.addWidget(self.custom_name_input)
+
+        custom_row = QHBoxLayout()
+        self.custom_price_input = QDoubleSpinBox()
+        self.custom_price_input.setPrefix("$")
+        self.custom_price_input.setMaximum(9999.99)
+        self.custom_price_input.setDecimals(2)
+        custom_row.addWidget(self.custom_price_input, 1)
+
+        add_custom_btn = QPushButton("Add")
+        add_custom_btn.setProperty("class", "secondary-button")
+        add_custom_btn.clicked.connect(self._add_custom)
+        custom_row.addWidget(add_custom_btn, 1)
+        custom_layout.addLayout(custom_row)
+        layout.addWidget(custom_frame)
 
         layout.addStretch(1)
 
-        # --- manual entry form ---
-        form_frame = QFrame()
-        form_frame.setObjectName("manualForm")
-        form_layout = QVBoxLayout(form_frame)
-        form_layout.setSpacing(SPACE_SM)
+        # --- quick items: real DB products, tap to add instantly ---
+        quick_items_label = QLabel("Quick Items")
+        quick_items_label.setObjectName("formTitle")
+        layout.addWidget(quick_items_label)
 
-        form_title = QLabel("Add custom item")
-        form_title.setObjectName("formTitle")
-        form_layout.addWidget(form_title)
+        self.grid_widget = QWidget()
+        self.grid_layout = QGridLayout(self.grid_widget)
+        self.grid_layout.setSpacing(SPACE_SM)
+        layout.addWidget(self.grid_widget)
 
-        row1 = QHBoxLayout()
-        self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Item name")
-        row1.addWidget(self.name_input, 2)
+        self._load_quick_items()
 
-        self.price_input = QDoubleSpinBox()
-        self.price_input.setPrefix("$")
-        self.price_input.setMaximum(9999.99)
-        self.price_input.setDecimals(2)
-        row1.addWidget(self.price_input, 1)
+    def _load_quick_items(self, limit=6):
+        try:
+            with DB_Connection(table="products", **self.conn_params) as db:
+                db.cur.execute("SELECT * FROM products ORDER BY code LIMIT %s", (limit,))
+                products = db.cur.fetchall()
+        except Exception as error:
+            QMessageBox.critical(self, "Products Not Loaded", str(error))
+            return
 
-        self.qty_input = QSpinBox()
-        self.qty_input.setMinimum(1)
-        self.qty_input.setMaximum(999)
-        row1.addWidget(self.qty_input, 1)
-        form_layout.addLayout(row1)
+        while self.grid_layout.count():
+            item = self.grid_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
 
-        add_custom_btn = QPushButton("Add Custom Item")
-        add_custom_btn.setProperty("class", "secondary-button")
-        add_custom_btn.clicked.connect(self._add_custom)
-        form_layout.addWidget(add_custom_btn)
+        for i, product in enumerate(products):
+            tile = QPushButton(f"{product['product_name']}\n${product['price']:.2f}")
+            tile.setProperty("class", "product-tile")
+            tile.setMinimumHeight(70)
+            tile.setCursor(Qt.PointingHandCursor)
+            tile.clicked.connect(lambda checked=False, p=dict(product): self._add_db_product(p))
+            self.grid_layout.addWidget(tile, i // 3, i % 3)
 
-        layout.addWidget(form_frame)
+    def _add_db_product(self, product):
+        self.on_add({
+            "code": str(product["code"]),
+            "product_name": product["product_name"],
+            "price": float(product["price"]),
+        })
 
-    def _filter_grid(self, text: str):
-        text = text.strip().lower()
-        for tile in self.tiles:
-            match = text in tile.product["product_name"].lower() or text in tile.product["code"]
-            tile.setVisible(match or text == "")
+    def _add_by_code(self):
+        code_text = self.item_code_input.text().strip()
+        if not code_text:
+            return
+        try:
+            code = int(code_text)
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Code", "Product code must be a number.")
+            return
 
-    def _handle_scan(self):
-        code = self.search_box.text().strip()
-        for product in SAMPLE_PRODUCTS:
-            if product["code"] == code:
-                self.on_add(product)
-                self.search_box.clear()
-                return
-        # no exact code match — if exactly one product is currently visible, add that one
-        visible = [t.product for t in self.tiles if t.isVisible()]
-        if len(visible) == 1:
-            self.on_add(visible[0])
-            self.search_box.clear()
+        try:
+            with DB_Connection(table="products", **self.conn_params) as db:
+                results = db.fetch_data(code=code)
+        except Exception as error:
+            QMessageBox.critical(self, "Lookup Failed", str(error))
+            return
+
+        if not results:
+            QMessageBox.warning(self, "Not Found", f"No product with code {code}.")
+            return
+
+        self._add_db_product(results)
+        self.item_code_input.clear()
 
     def _add_custom(self):
-        name = self.name_input.text().strip()
+        name = self.custom_name_input.text().strip()
         if not name:
+            QMessageBox.warning(self, "Missing Name", "Enter a name for the custom item.")
             return
         product = {
-            "code": f"CUSTOM-{name.lower()}",
+            "code": f"CUSTOM-{name}",
             "product_name": name,
-            "price": self.price_input.value(),
+            "price": self.custom_price_input.value(),
         }
-        self.on_add(product, qty=self.qty_input.value())
-        self.name_input.clear()
-        self.price_input.setValue(0)
-        self.qty_input.setValue(1)
+        self.on_add(product)
+        self.custom_name_input.clear()
+        self.custom_price_input.setValue(0)
 
 
 class CartPanel(QFrame):
@@ -276,6 +285,7 @@ class CartPanel(QFrame):
             self.total_label.setText(f"Total: ${total:.2f}")
 
     def _apply_cupon(self):
+        # print(self.cupon_input.text().strip())
         self.on_apply_cupon(self.cupon_input.text().strip())
 
     def set_discount(self, discount: int, cupon_code: str):
@@ -319,7 +329,6 @@ class MainWindow(QMainWindow):
         self.resize(1000, 600)
 
         self.cart: dict[str, dict] = {}
-        self._custom_counter = 0
 
         central = QWidget()
         self.setCentralWidget(central)
@@ -327,7 +336,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.product_panel = ProductPanel(on_add=self.add_to_cart)
+        self.product_panel = ProductPanel(on_add=self.add_to_cart, conn_params=conn_params)
         self.cart_panel = CartPanel(
             on_change_qty=self.change_qty,
             on_remove=self.remove_item,
@@ -341,7 +350,10 @@ class MainWindow(QMainWindow):
         self.cart_panel.render_cart(self.cart)
 
     def add_to_cart(self, product: dict, qty: int = 1):
-        code = product["code"]
+        # Cart is keyed by product code, not name — two different DB
+        # products that happen to share a name no longer collapse into
+        # one cart line.
+        code = str(product["code"])
         if code in self.cart:
             self.cart[code]["qty"] += qty
         else:
@@ -365,10 +377,19 @@ class MainWindow(QMainWindow):
         self.cart_panel.render_cart(self.cart)
 
     def apply_cupon(self, cupon_code: str):
-        for cupon in sample_cupon:
-            if cupon["cuponcode"].lower() == cupon_code.lower():
-                self.cart_panel.set_discount(cupon["discount"], cupon["cuponcode"])
-                return
+        # for cupon in sample_cupon:
+        #     if cupon["cuponcode"].lower() == cupon_code.lower():
+        #         self.cart_panel.set_discount(cupon["discount"], cupon["cuponcode"])
+        #         return
+        
+        with DB_Connection(table='cupons', **conn_params) as db:
+            cupon = db.fetch_data(
+                cuponcode = cupon_code
+            )
+            print(cupon)
+            self.cart_panel.set_discount(int(cupon["discount"]), cupon["cuponcode"])
+            return
+        
         self.cart_panel.set_discount(0, "")
         QMessageBox.warning(self, "Invalid Coupon", "That coupon code is not valid.")
 
@@ -378,6 +399,19 @@ class MainWindow(QMainWindow):
             return
         subtotal = sum(item["price"] * item["qty"] for item in self.cart.values())
         total = subtotal * (1 - self.cart_panel.discount / 100)
+
+        # Only real DB products (keys that aren't "CUSTOM-...") get removed.
+        product_codes = [int(code) for code in self.cart.keys() if not code.startswith("CUSTOM-")]
+
+        if product_codes:
+            try:
+                with DB_Connection(table="products", **conn_params) as db:
+                    db.cur.execute("DELETE FROM products WHERE code = ANY(%s)", (product_codes,))
+                    db.conn.commit()
+            except Exception as error:
+                QMessageBox.critical(self, "Purchase Not Completed", f"Could not remove purchased products: {error}")
+                return
+
         QMessageBox.information(self, "Purchase Complete", f"Charged ${total:.2f}. Thank you!")
         self.cart.clear()
         self.cart_panel.clear_cupon()

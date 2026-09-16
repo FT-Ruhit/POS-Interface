@@ -1,5 +1,16 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+conn_params = dict(
+    host=os.getenv("host"),
+    port=os.getenv("port"),
+    dbname=os.getenv("dbname"),
+    user=os.getenv("user"),
+    password=os.getenv("password"),
+)
 
 
 class DB_Connection():
@@ -46,14 +57,10 @@ class DB_Connection():
         
 def main():
     with DB_Connection(
-        table = "products",
-        host="localhost",
-        port=5432,
-        dbname="postgres",
-        user="postgres",
-        password="9123"
+        table = "cupons",
+        **conn_params
     ) as db:
-        print(db.fetch_data())
+        print(db.fetch_all_data())
         # db.push_data(
         #     cuponcode = 'HEL30',
         #     discount = 30

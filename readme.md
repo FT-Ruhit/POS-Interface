@@ -37,7 +37,7 @@ A desktop point-of-sale (POS) application built with Python, PySide6, and Postgr
 
 3. Create a PostgreSQL database for the application.
 
-4. Execute the SQL in `init.sql` against that database. It creates the `products` and `cupons` tables and inserts sample records.
+4. Execute the SQL in `init.sql` against that database. It creates the `products`, `cupons`, and `quickitems` tables and inserts sample records.
 
 5. Configure the local database connection through a `.env` file before starting either application. The expected keys are:
 
@@ -91,7 +91,7 @@ Run:
 python pos_main.py
 ```
 
-The terminal opens maximized with products on the left and the cart on the right. The first six products ordered by `code` are displayed as quick-item tiles. The remaining products can still be added by entering their exact numeric code in **Add by code**.
+The terminal opens maximized with products on the left and the cart on the right. The checkout implementation displays up to six rows from `quickitems` as quick-item tiles. Products outside the displayed tiles can still be added by entering their exact numeric code in **Add by code**.
 
 ### Complete a sale
 
@@ -137,7 +137,7 @@ Product codes must be unique. If an insert conflicts with an existing code, Post
 
 ### Apply catalog changes to checkout
 
-The checkout terminal loads its quick-item tiles only during startup. After adding, deleting, or changing catalog data in `data_entry.py`, close and restart `pos_main.py` so the terminal reloads the current products. Coupon lookups are performed while applying a coupon, so newly added coupons can be used after the checkout terminal is restarted or after the next lookup.
+The checkout terminal loads up to six quick-item rows from `quickitems` during startup. Quick items do not have product codes and are not removed from the database after purchase. Restart `pos_main.py` after changing `quickitems`. Coupon lookups are performed while applying a coupon, so newly added coupons can be used after the checkout terminal is restarted or after the next lookup.
 
 ### Stop the application
 
@@ -184,8 +184,9 @@ Run `data_entry.py` to open the management window.
 | --- | --- | --- |
 | `products` | `code`, `product_name`, `price` | Product catalog shown in the application |
 | `cupons` | `cuponcode`, `discount` | Percentage coupon codes |
+| `quickitems` | `product_name`, `price` | Predefined items shown as checkout quick-item tiles |
 
-The project currently uses the existing table name `cupons` and field name `cuponcode`.
+The project currently uses the existing table name `cupons` and field name `cuponcode`. The `quickitems` table does not include a product code, so its rows are separate from the coded records in `products`.
 
 ## Project structure
 
@@ -204,7 +205,7 @@ POS Interface/
 ## How it works
 
 1. `pos_main.py` and `data_entry.py` load the database connection environment from `.env`.
-2. The checkout terminal loads up to six quick items from `products` and looks up entered product codes on demand.
+2. The checkout terminal loads up to six quick items from `quickitems` and looks up entered product codes on demand.
 3. `ProductPanel` sends selected database products or custom items to `MainWindow`.
 4. `CartPanel` renders quantities, subtotals, coupons, and totals.
 5. `MainWindow` owns cart state, handles quantity changes, and removes purchased database products after confirmation.
@@ -220,6 +221,10 @@ Check that PostgreSQL is running, the database exists, and the local `.env` conf
 
 Confirm that `init.sql` was executed against the database configured in `.env`. Verify the table names `products` and `cupons` and check that they contain rows.
 
+### Quick-item records do not appear as tiles
+
+Confirm that `quickitems` contains rows with `product_name` and `price`, then restart `pos_main.py`.
+
 ### Data-entry changes are not visible in the terminal
 
 The checkout terminal loads quick items when it starts. Restart `pos_main.py` after adding or deleting products in `data_entry.py`.
@@ -233,5 +238,5 @@ Run `pos_main.py` from the project directory or keep `pos_style.qss` beside `pos
 - Purchases are not persisted.
 - No order, payment, or sales-history record is stored.
 - Database errors are not presented through a dedicated UI error screen.
-- Quick products are loaded once at startup; catalog changes require restarting the terminal.
+- Quick items are loaded once at startup from `quickitems`; changes require restarting the terminal.
 - Custom items exist only for the current checkout session.

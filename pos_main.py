@@ -113,7 +113,7 @@ class ProductPanel(QFrame):
 
         layout.addStretch(1)
 
-        # --- quick items: real DB products, tap to add instantly ---
+        # --- quick items: predefined items, tap to add instantly ---
         quick_items_label = QLabel("Quick Items")
         quick_items_label.setObjectName("formTitle")
         layout.addWidget(quick_items_label)
@@ -127,11 +127,10 @@ class ProductPanel(QFrame):
 
     def _load_quick_items(self, limit=6):
         try:
-            with DB_Connection(table="products", **self.conn_params) as db:
-                db.cur.execute("SELECT * FROM products ORDER BY code LIMIT %s", (limit,))
-                products = db.cur.fetchall()
+            with DB_Connection(table="quickitems", **self.conn_params) as db:
+                quick_items = db.fetch_all_data()
         except Exception as error:
-            QMessageBox.critical(self, "Products Not Loaded", str(error))
+            QMessageBox.critical(self, "Quick Items Not Loaded", str(error))
             return
 
         while self.grid_layout.count():
@@ -140,13 +139,24 @@ class ProductPanel(QFrame):
             if widget is not None:
                 widget.deleteLater()
 
-        for i, product in enumerate(products):
-            tile = QPushButton(f"{product['product_name']}\n${product['price']:.2f}")
+        for i, quick_item in enumerate(quick_items):
+            tile = QPushButton(
+                f"{quick_item['product_name']}\n${quick_item['price']:.2f}"
+            )
             tile.setProperty("class", "product-tile")
             tile.setMinimumHeight(70)
             tile.setCursor(Qt.PointingHandCursor)
-            tile.clicked.connect(lambda checked=False, p=dict(product): self._add_db_product(p))
+            tile.clicked.connect(
+                lambda checked=False, item=dict(quick_item): self._add_quick_item(item)
+            )
             self.grid_layout.addWidget(tile, i // 3, i % 3)
+
+    def _add_quick_item(self, quick_item):
+        self.on_add({
+            "code": f"QUICK-{quick_item['product_name']}",
+            "product_name": quick_item["product_name"],
+            "price": float(quick_item["price"]),
+        })
 
     def _add_db_product(self, product):
         self.on_add({
@@ -377,21 +387,17 @@ class MainWindow(QMainWindow):
         self.cart_panel.render_cart(self.cart)
 
     def apply_cupon(self, cupon_code: str):
-        # for cupon in sample_cupon:
-        #     if cupon["cuponcode"].lower() == cupon_code.lower():
-        #         self.cart_panel.set_discount(cupon["discount"], cupon["cuponcode"])
-        #         return
-        
-        with DB_Connection(table='cupons', **conn_params) as db:
-            cupon = db.fetch_data(
-                cuponcode = cupon_code
-            )
-            print(cupon)
-            self.cart_panel.set_discount(int(cupon["discount"]), cupon["cuponcode"])
-            return
-        
-        self.cart_panel.set_discount(0, "")
-        QMessageBox.warning(self, "Invalid Coupon", "That coupon code is not valid.")
+        try:
+            with DB_Connection(table='cupons', **conn_params) as db:
+                cupon = db.fetch_data(
+                    cuponcode = cupon_code
+                )
+                # print(cupon)
+                self.cart_panel.set_discount(int(cupon["discount"]), cupon["cuponcode"])
+                return
+        except:
+            self.cart_panel.set_discount(0, "")
+            QMessageBox.warning(self, "Invalid Coupon", "That coupon code is not valid.")
 
     def purchase(self):
         if not self.cart:
@@ -400,14 +406,16 @@ class MainWindow(QMainWindow):
         subtotal = sum(item["price"] * item["qty"] for item in self.cart.values())
         total = subtotal * (1 - self.cart_panel.discount / 100)
 
-        # Only real DB products (keys that aren't "CUSTOM-...") get removed.
-        product_codes = [int(code) for code in self.cart.keys() if not code.startswith("CUSTOM-")]
+        # Only coded products from the products table are removed after purchase.
+        product_codes = [int(code) for code in self.cart.keys() if code.isdigit()]
 
         if product_codes:
             try:
                 with DB_Connection(table="products", **conn_params) as db:
-                    db.cur.execute("DELETE FROM products WHERE code = ANY(%s)", (product_codes,))
-                    db.conn.commit()
+                    for product_code in product_codes:
+                        db.del_data(
+                            code = product_code
+                        )
             except Exception as error:
                 QMessageBox.critical(self, "Purchase Not Completed", f"Could not remove purchased products: {error}")
                 return

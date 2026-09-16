@@ -276,8 +276,8 @@ class DataEntryWindow(QMainWindow):
 
         try:
             with DB_Connection(table="products", **CONNECTION_PARAMS) as db:
-                db.cur.execute("DELETE FROM products WHERE code = ANY(%s)", (codes,))
-                db.conn.commit()
+                for code in codes:
+                    db.del_data(code=code)
         except Exception as error:
             QMessageBox.critical(self, "Products Not Deleted", str(error))
             return
@@ -329,11 +329,8 @@ class DataEntryWindow(QMainWindow):
             return
         try:
             with DB_Connection(table="products", **CONNECTION_PARAMS) as db:
-                db.cur.executemany(
-                    "INSERT INTO products (code, product_name, price) VALUES (%(code)s, %(product_name)s, %(price)s)",
-                    self.pending_products,
-                )
-                db.conn.commit()
+                for pending_product in self.pending_products:
+                    db.push_data(**pending_product)
         except Exception as error:
             QMessageBox.critical(self, "Products Not Added", str(error))
             return

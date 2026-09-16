@@ -9,6 +9,11 @@ CREATE TABLE cupons (
     discount INT
 )
 
+CREATE TABLE quickitems (
+    product_name VARCHAR(100),
+    price FLOAT
+)
+
 -- Sample data for products
 INSERT INTO products (code, product_name, price) VALUES
     (1001, 'Coffee', 3.50),
@@ -24,4 +29,12 @@ INSERT INTO products (code, product_name, price) VALUES
 INSERT INTO cupons (cuponcode, discount) VALUES
     ('SAVE10', 10),
     ('WELCOME20', 20)
+
+-- Sample data for quickitems
+INSERT INTO quickitems (product_name, price) VALUES
+    ('Coffee', 3.50),
+    ('Orange Juice', 3.00),
+    ('Bottled Water', 1.50),
+    ('Iced Tea', 3.25)
+
 

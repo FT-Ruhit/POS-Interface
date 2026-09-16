@@ -59,8 +59,10 @@ class DataEntryWindow(QMainWindow):
 
         layout.addWidget(self._build_coupon_panel(), 1)
         layout.addWidget(self._build_product_panel(), 2)
+        layout.addWidget(self._build_quick_item_panel(), 1)
         self._refresh_coupons()
         self._refresh_products()
+        self._refresh_quick_items()
 
     def _build_coupon_panel(self):
         panel = QGroupBox("Add Coupon")
@@ -164,6 +166,44 @@ class DataEntryWindow(QMainWindow):
         layout.addLayout(manage_buttons)
         return panel
 
+    def _build_quick_item_panel(self):
+        panel = QGroupBox("Quick Items")
+        layout = QVBoxLayout(panel)
+        layout.setSpacing(12)
+
+        form = QFormLayout()
+        form.setSpacing(10)
+
+        self.quick_item_name_input = QLineEdit()
+        self.quick_item_name_input.setPlaceholderText("Item name")
+        form.addRow("Name", self.quick_item_name_input)
+
+        self.quick_item_price_input = PriceSpinBox()
+        self.quick_item_price_input.setRange(0, 999999.99)
+        self.quick_item_price_input.setDecimals(2)
+        self.quick_item_price_input.setPrefix("$")
+        form.addRow("Price", self.quick_item_price_input)
+        layout.addLayout(form)
+
+        add_quick_item_button = QPushButton("Add Quick Item")
+        add_quick_item_button.setProperty("class", "primary-button")
+        add_quick_item_button.clicked.connect(self._add_quick_item)
+        layout.addWidget(add_quick_item_button)
+
+        layout.addWidget(QLabel("Saved Quick Items"))
+        self.quick_item_table = QTableWidget(0, 3)
+        self.quick_item_table.setHorizontalHeaderLabels(["Name", "Price", ""])
+        self._configure_data_table(self.quick_item_table)
+        layout.addWidget(self.quick_item_table, 1)
+
+        manage_buttons = QHBoxLayout()
+        refresh_button = QPushButton("Refresh")
+        refresh_button.setProperty("class", "secondary-button")
+        refresh_button.clicked.connect(self._refresh_quick_items)
+        manage_buttons.addWidget(refresh_button)
+        layout.addLayout(manage_buttons)
+        return panel
+
     @staticmethod
     def _configure_data_table(table, allow_multiple=False):
         table.setSelectionBehavior(QTableWidget.SelectRows)
@@ -211,6 +251,25 @@ class DataEntryWindow(QMainWindow):
             )
             self.product_table.setCellWidget(row, 4, delete_button)
 
+    def _refresh_quick_items(self):
+        try:
+            with DB_Connection(table="quickitems", **CONNECTION_PARAMS) as db:
+                quick_items = db.fetch_all_data()
+        except Exception as error:
+            QMessageBox.critical(self, "Quick Items Not Loaded", str(error))
+            return
+
+        self.quick_item_table.setRowCount(0)
+        for item in quick_items:
+            row = self.quick_item_table.rowCount()
+            self.quick_item_table.insertRow(row)
+            self.quick_item_table.setItem(row, 0, QTableWidgetItem(item["product_name"]))
+            self.quick_item_table.setItem(row, 1, QTableWidgetItem(f"${item['price']:.2f}"))
+            delete_button = self._make_delete_button(
+                lambda checked=False, name=item["product_name"], price=float(item["price"]): self._delete_quick_item(name, price)
+            )
+            self.quick_item_table.setCellWidget(row, 2, delete_button)
+
     @staticmethod
     def _make_selection_checkbox():
         checkbox = QCheckBox()
@@ -252,6 +311,15 @@ class DataEntryWindow(QMainWindow):
             QMessageBox.critical(self, "Product Not Deleted", str(error))
             return
         self._refresh_products()
+
+    def _delete_quick_item(self, name, price):
+        try:
+            with DB_Connection(table="quickitems", **CONNECTION_PARAMS) as db:
+                db.del_data(product_name=name)
+        except Exception as error:
+            QMessageBox.critical(self, "Quick Item Not Deleted", str(error))
+            return
+        self._refresh_quick_items()
 
     def _delete_selected_products(self):
         rows = [
@@ -339,6 +407,24 @@ class DataEntryWindow(QMainWindow):
         self.preview_label.setText("No products queued")
         self._refresh_products()
         QMessageBox.information(self, "Products Added", f"{count} product(s) were added.")
+
+    def _add_quick_item(self):
+        name = self.quick_item_name_input.text().strip()
+        if not name:
+            QMessageBox.warning(self, "Missing Quick Item Name", "Enter a quick item name before continuing.")
+            return
+
+        try:
+            with DB_Connection(table="quickitems", **CONNECTION_PARAMS) as db:
+                db.push_data(product_name=name, price=float(self.quick_item_price_input.value()))
+        except Exception as error:
+            QMessageBox.critical(self, "Quick Item Not Added", str(error))
+            return
+
+        self.quick_item_name_input.clear()
+        self.quick_item_price_input.setValue(0)
+        self._refresh_quick_items()
+        QMessageBox.information(self, "Quick Item Added", f"Quick item {name} was added.")
 
 
 def load_stylesheet(app):

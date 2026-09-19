@@ -1,242 +1,188 @@
 # POS Interface
 
-A desktop point-of-sale (POS) application built with Python, PySide6, and PostgreSQL. It includes a checkout terminal for selling products and a separate data-entry window for managing the product catalog and coupons.
+A small desktop point-of-sale application built with Python and PySide6. The project includes a sales terminal for adding items to a cart and a data-entry window for managing products, coupons, and quick items.
 
-## Features
+## What this app does
 
-- Load products from a PostgreSQL `products` table.
-- Add products to a cart by clicking quick-item tiles or entering an exact product code.
-- Add custom items with a name, price, and quantity.
-- Increase, decrease, or remove cart items.
-- Apply percentage coupons loaded from PostgreSQL and display the original and discounted totals.
-- Remove purchased database products after a successful checkout.
-- Show purchase confirmation and clear the cart after checkout.
-- Manage products and coupons with the data-entry application.
-- Apply the shared Qt stylesheet from `pos_style.qss`.
+- Lets a cashier add items to a sale from a product list or a quick-item tile grid
+- Supports adding custom one-off items that are not saved to the database
+- Applies coupon discounts to the current cart total
+- Removes purchased real products from the local database after checkout
+- Provides a separate admin window for creating and deleting products, coupons, and quick items
+
+## Current implementation details
+
+This project currently uses SQLite rather than PostgreSQL. The database is created automatically as a local file named Data.db when the app starts, and the schema is defined in init_db.py.
+
+The main database tables are:
+
+- products
+- cupons
+- quickitems
+
+## Tech stack
+
+- Python 3.10+
+- PySide6
+- SQLite3
+- Qt stylesheet file: pos_style.qss
 
 ## Requirements
 
-- Python 3.10 or newer
-- PostgreSQL
-- Python dependencies listed in `requirements.txt`
-
-## Installation
-
-1. Create and activate a virtual environment:
-
-	```powershell
-	python -m venv .venv
-	.\.venv\Scripts\Activate.ps1
-	```
-
-2. Install the dependencies from `requirements.txt`:
-
-	```powershell
-	pip install -r requirements.txt
-	```
-
-3. Create a PostgreSQL database for the application.
-
-4. Execute the SQL in `init.sql` against that database. It creates the `products`, `cupons`, and `quickitems` tables and inserts sample records.
-
-5. Configure the local database connection through a `.env` file before starting either application. The expected keys are:
-
-	```dotenv
-	host=localhost
-	port=5432
-	dbname=your_database
-	user=your_user
-	password=your_password
-	```
-
-## Running the application
-
-The project contains two separate desktop windows:
-
-- `pos_main.py` is the checkout terminal used to create sales.
-- `data_entry.py` is the catalog and coupon manager used to prepare the database.
-
-Both programs connect to PostgreSQL when they start. Keep PostgreSQL running, run commands from the project directory, and activate the virtual environment before launching either program.
-
-### Start-up checklist
-
-1. Start the PostgreSQL service and confirm that the configured database is available.
-2. Open PowerShell in the project directory:
-
-	```powershell
-	cd "C:\Code\Qt-Python\POS Interface"
-	```
-
-3. Activate the virtual environment:
-
-	```powershell
-	.\.venv\Scripts\Activate.ps1
-	```
-
-	If PowerShell blocks the activation script for the current session, run:
-
-	```powershell
-	Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-	.\.venv\Scripts\Activate.ps1
-	```
-
-4. Check that `.env` is in the project directory and contains the lowercase keys `host`, `port`, `dbname`, `user`, and `password`.
-5. Launch the window required for the task. Do not start both scripts in the same terminal because each script owns its own Qt event loop.
-
-### Start the checkout terminal
-
-Run:
+Install the dependencies in the project folder:
 
 ```powershell
-python pos_main.py
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
-
-The terminal opens maximized with products on the left and the cart on the right. The checkout implementation displays up to six rows from `quickitems` as quick-item tiles. Products outside the displayed tiles can still be added by entering their exact numeric code in **Add by code**.
-
-### Complete a sale
-
-1. Add a product by clicking a quick-item tile, or enter its numeric code and select **Add**. A product code must already exist in the `products` table.
-2. Add any one-off items through **Add custom item** by entering a name and price. These items are identified internally with a `CUSTOM-` code and are not added to the catalog.
-3. Review the cart. Use `+` and `-` to adjust quantities, or use the remove control to delete a line.
-4. Enter a coupon code from the `cupons` table and select **Apply**. The discount is shown below the coupon field and the total is recalculated.
-5. Select **Purchase**. The discounted amount is displayed, real database products in the cart are deleted from `products`, and the cart is cleared.
-
-An empty cart cannot be purchased. If the database deletion fails, the purchase is not completed and the cart remains available for retry.
-
-### Start the data-entry window
-
-Run:
-
-```powershell
-python data_entry.py
-```
-
-The data-entry window opens maximized with coupon controls on the left and product controls on the right. Both saved-data tables are loaded from PostgreSQL when the window starts.
-
-### Add and remove coupons
-
-1. Enter a unique coupon code, such as `SAVE10`, in the **Code** field.
-2. Enter a percentage from `1` to `100` in **Discount**.
-3. Select **Add Coupon**. The coupon is inserted into `cupons` and appears in **Saved Coupons**.
-4. Use the delete control in the table to remove a coupon.
-5. Select **Refresh** after making changes through another database tool.
-
-Coupon codes must be unique because `cuponcode` has a unique constraint. A duplicate code is rejected by PostgreSQL and shown as an error dialog.
-
-### Add and remove products
-
-1. Enter the first and last product codes in **Code from** and **Code to**. The range is inclusive.
-2. Enter one product name and price for the range.
-3. Select **Preview Range**. The window reports how many product rows are queued.
-4. Select **Add Products** to insert the queued rows into `products`.
-5. Use the delete control beside a saved product to remove one row.
-6. To remove several products, check their selection boxes, select **Delete Selected**, and confirm the dialog.
-7. Select **Refresh** after making changes through another database tool.
-
-Product codes must be unique. If an insert conflicts with an existing code, PostgreSQL rejects the insert and the error is shown in a dialog.
-
-### Apply catalog changes to checkout
-
-The checkout terminal loads up to six quick-item rows from `quickitems` during startup. Quick items do not have product codes and are not removed from the database after purchase. Restart `pos_main.py` after changing `quickitems`. Coupon lookups are performed while applying a coupon, so newly added coupons can be used after the checkout terminal is restarted or after the next lookup.
-
-### Stop the application
-
-Close the Qt window normally. If the program is running in a terminal and the window is unresponsive, press `Ctrl+C` in that terminal after closing the window. The application does not create a separate server process.
-
-## Using the POS
-
-### Add products to a sale
-
-- Click a quick-item tile to add one unit to the cart.
-- Enter an exact numeric product code and press Enter or select **Add** to look it up in PostgreSQL.
-- Use **Add custom item** for products that are not in the database. Custom items use a `CUSTOM-` code and are not saved to PostgreSQL.
-
-### Manage the cart
-
-- Use `+` and `-` to change an item's quantity.
-- Use the remove control in the final column to delete an item.
-- The total updates after every cart change.
-
-### Apply a coupon
-
-Enter a coupon code such as `SAVE10` or `WELCOME20`, then select **Apply**. Coupons are read from the `cupons` table.
-
-### Complete a purchase
-
-Select **Purchase** when the cart is ready. The application calculates the discounted total, removes the purchased database products from `products`, displays the amount charged, and clears the cart. Custom items are only part of the current sale and are not removed from the database.
-
-## Managing products and coupons
-
-Run `data_entry.py` to open the management window.
-
-- Add a coupon by entering its code and percentage discount.
-- Delete individual coupons with the delete control in the saved-coupons table.
-- Enter a product code range, name, and price, then select **Preview Range** before **Add Products** to insert one product for each code in the range.
-- Refresh the saved products and coupons tables after external database changes.
-- Select one or more products and choose **Delete Selected** to remove them after confirmation.
-- Delete an individual product with the delete control in the saved-products table.
-
-## Database schema
-
-`init.sql` defines these tables:
-
-| Table | Columns | Purpose |
-| --- | --- | --- |
-| `products` | `code`, `product_name`, `price` | Product catalog shown in the application |
-| `cupons` | `cuponcode`, `discount` | Percentage coupon codes |
-| `quickitems` | `product_name`, `price` | Predefined items shown as checkout quick-item tiles |
-
-The project currently uses the existing table name `cupons` and field name `cuponcode`. The `quickitems` table does not include a product code, so its rows are separate from the coded records in `products`.
 
 ## Project structure
 
 ```text
 POS Interface/
-├── data_entry.py    # Product and coupon management window
-├── db_connect.py    # PostgreSQL connection and CRUD helpers
-├── init.sql         # Database schema and sample data
-├── pos_main.py      # Checkout terminal and cart behavior
-├── pos_style.qss    # Shared Qt stylesheet
-├── requirements.txt # Python dependencies
-├── test.py          # Project test or experimentation script
-└── readme.md        # Project documentation
+├── data_entry.py      # Product, coupon, and quick-item management UI
+├── db_connect.py      # SQLite database access helper
+├── init_db.py         # Table creation and DB initialization
+├── init.sql           # SQL seed script for schema and sample records
+├── pos_main.py        # Checkout interface and cart logic
+├── pos_style.qss      # Shared Qt styling
+├── requirements.txt   # Python dependencies
+├── Data.db            # Local SQLite database created at runtime
+├── test.py            # Experimental/test script
+├── readme.md          # Project documentation
+└── .venv              # Virtual environment (local)
 ```
 
-## How it works
+## How to run the app
 
-1. `pos_main.py` and `data_entry.py` load the database connection environment from `.env`.
-2. The checkout terminal loads up to six quick items from `quickitems` and looks up entered product codes on demand.
-3. `ProductPanel` sends selected database products or custom items to `MainWindow`.
-4. `CartPanel` renders quantities, subtotals, coupons, and totals.
-5. `MainWindow` owns cart state, handles quantity changes, and removes purchased database products after confirmation.
-6. `DataEntryWindow` reads and writes the `products` and `cupons` tables, including range insertion and deletion controls.
+### 1. Open a terminal in the project root
+
+```powershell
+cd "C:\Code\Qt-Python\POS Interface"
+```
+
+### 2. Activate the virtual environment
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+If execution policy blocks the script, run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
+```
+
+### 3. Launch the checkout window
+
+```powershell
+python pos_main.py
+```
+
+This opens the POS sales screen.
+
+### 4. Launch the data-entry window
+
+```powershell
+python data_entry.py
+```
+
+This opens the management screen for coupons and products.
+
+> Do not run both windows in the same terminal session if you want to keep them separate and avoid Qt event-loop conflicts.
+
+## Database setup
+
+The app creates the database automatically, so there is no .env configuration step in the current implementation.
+
+When the app starts, it connects to Data.db and creates the required tables if they do not already exist:
+
+- products(code, product_name, price)
+- cupons(cuponcode, discount)
+- quickitems(product_name, price)
+
+You can also initialize sample data manually by running the SQL in init.sql.
+
+## Using the checkout screen
+
+### Add products
+
+- Click a quick-item tile to add an item instantly
+- Enter a product code and click Add to look up a saved product
+- Use Add custom item to create a temporary item not stored in the product catalog
+
+### Manage the cart
+
+- Increase or decrease quantity using the controls in the cart table
+- Remove items individually
+- Review the subtotal and total as the cart changes
+
+### Apply a discount
+
+- Enter a coupon code such as SAVE10 or WELCOME20
+- Click Apply to calculate the discounted total
+
+### Complete a purchase
+
+- Click Purchase when ready
+- The app calculates the final amount, removes purchased real products from the database, and clears the cart
+- Custom items are not saved to the database and are only included for the current transaction
+
+## Using the data-entry screen
+
+### Add coupons
+
+- Enter a coupon code and percentage discount
+- Click Add Coupon
+- The coupon appears in the saved coupon table
+
+### Add products in a range
+
+- Enter a starting and ending code range
+- Provide a product name and price
+- Click Preview Range to confirm the number of rows to insert
+- Click Add Products to insert them into the products table
+
+### Delete entries
+
+- Delete individual rows with the delete button in each table
+- Select several products and click Delete Selected for bulk removal
+- Refresh the tables after making external changes to the database
+
+## Quick items
+
+The quick-item section is populated from the quickitems table. These rows are shown as big clickable tiles in the checkout screen and are useful for frequently sold items.
 
 ## Troubleshooting
 
-### PostgreSQL connection errors
+### Database file is missing
 
-Check that PostgreSQL is running, the database exists, and the local `.env` configuration is correct.
+The app creates Data.db automatically when it runs. If it does not exist yet, start the app once and it will be created.
 
-### No products or coupons appear
+### No items appear in the POS
 
-Confirm that `init.sql` was executed against the database configured in `.env`. Verify the table names `products` and `cupons` and check that they contain rows.
+Check that the tables were created and that the Data.db file contains rows.
 
-### Quick-item records do not appear as tiles
+### Product lookup fails
 
-Confirm that `quickitems` contains rows with `product_name` and `price`, then restart `pos_main.py`.
+Make sure the code you enter matches an existing product in the products table.
 
-### Data-entry changes are not visible in the terminal
+### Style is not applied
 
-The checkout terminal loads quick items when it starts. Restart `pos_main.py` after adding or deleting products in `data_entry.py`.
+Keep pos_style.qss in the same folder as the Python files and launch the app from the project directory.
 
-### The stylesheet is not applied
+## Notes
 
-Run `pos_main.py` from the project directory or keep `pos_style.qss` beside `pos_main.py`; the stylesheet path is resolved relative to the Python entry point.
+- This project does not currently include payment processing or sales history.
+- Purchases are not persisted beyond the active checkout flow.
+- Quick-item changes are visible after restarting the checkout screen, since it loads the table when it starts.
 
-## Current limitations
+## Common commands
 
-- Purchases are not persisted.
-- No order, payment, or sales-history record is stored.
-- Database errors are not presented through a dedicated UI error screen.
-- Quick items are loaded once at startup from `quickitems`; changes require restarting the terminal.
-- Custom items exist only for the current checkout session.
+```powershell
+python pos_main.py
+python data_entry.py
+pip install -r requirements.txt
+```

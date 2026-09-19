@@ -20,17 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from db_connect import DB_Connection
-from dotenv import load_dotenv
-import os
-load_dotenv()
 
-conn_params = dict(
-    host=os.getenv("host"),
-    port=os.getenv("port"),
-    dbname=os.getenv("dbname"),
-    user=os.getenv("user"),
-    password=os.getenv("password"),
-)
 
 SPACE_XS = 4
 SPACE_SM = 8
@@ -46,10 +36,9 @@ class ProductPanel(QFrame):
     item, or tap a quick-item tile — all three now go through the DB or
     are explicitly marked as non-DB (CUSTOM-)."""
 
-    def __init__(self, on_add, conn_params):
+    def __init__(self, on_add):
         super().__init__()
         self.on_add = on_add
-        self.conn_params = conn_params
         self.setObjectName("productPanel")
 
         layout = QVBoxLayout(self)
@@ -127,7 +116,7 @@ class ProductPanel(QFrame):
 
     def _load_quick_items(self, limit=6):
         try:
-            with DB_Connection(table="quickitems", **self.conn_params) as db:
+            with DB_Connection(table="quickitems") as db:
                 quick_items = db.fetch_all_data()
         except Exception as error:
             QMessageBox.critical(self, "Quick Items Not Loaded", str(error))
@@ -176,7 +165,7 @@ class ProductPanel(QFrame):
             return
 
         try:
-            with DB_Connection(table="products", **self.conn_params) as db:
+            with DB_Connection(table="products") as db:
                 results = db.fetch_data(code=code)
         except Exception as error:
             QMessageBox.critical(self, "Lookup Failed", str(error))
@@ -346,7 +335,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.product_panel = ProductPanel(on_add=self.add_to_cart, conn_params=conn_params)
+        self.product_panel = ProductPanel(on_add=self.add_to_cart)
         self.cart_panel = CartPanel(
             on_change_qty=self.change_qty,
             on_remove=self.remove_item,
@@ -388,7 +377,7 @@ class MainWindow(QMainWindow):
 
     def apply_cupon(self, cupon_code: str):
         try:
-            with DB_Connection(table='cupons', **conn_params) as db:
+            with DB_Connection(table='cupons') as db:
                 cupon = db.fetch_data(
                     cuponcode = cupon_code
                 )
@@ -411,7 +400,7 @@ class MainWindow(QMainWindow):
 
         if product_codes:
             try:
-                with DB_Connection(table="products", **conn_params) as db:
+                with DB_Connection(table="products") as db:
                     for product_code in product_codes:
                         db.del_data(
                             code = product_code

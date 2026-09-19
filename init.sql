@@ -1,15 +1,15 @@
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     code INT UNIQUE,
     product_name VARCHAR(100),
     price FLOAT
 )
 
-CREATE TABLE cupons (
+CREATE TABLE IF NOT EXISTS cupons (
     cuponcode VARCHAR(20) UNIQUE,
     discount INT
 )
 
-CREATE TABLE quickitems (
+CREATE TABLE IF NOT EXISTS quickitems (
     product_name VARCHAR(100),
     price FLOAT
 )

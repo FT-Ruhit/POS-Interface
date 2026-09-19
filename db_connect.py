@@ -1,28 +1,15 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from dotenv import load_dotenv
-import os
-load_dotenv()
-
-conn_params = dict(
-    host=os.getenv("host"),
-    port=os.getenv("port"),
-    dbname=os.getenv("dbname"),
-    user=os.getenv("user"),
-    password=os.getenv("password"),
-)
+from init_db import Init_DB
 
 
-class DB_Connection():
-    def __init__(self,table, **kwargs):
-        self.conn = psycopg2.connect(**kwargs)
-        self.cur = self.conn.cursor(cursor_factory=RealDictCursor)
+class DB_Connection(Init_DB):
+    def __init__(self,table):
+        super().__init__()
         self.table = table
     def fetch_data(self, **kwargs):
-        
-        column = ", ".join(kwargs.keys())
-        placeholder = ", ".join(f"%({key})s" for key in kwargs.keys())
-        query = f"SELECT * FROM {self.table} WHERE {column} = {placeholder}"
+        if not kwargs:
+            raise ValueError("fetch_data() requires at least one condition")
+        conditions = " AND ".join(f"{key} = :{key}" for key in kwargs.keys())
+        query = f"SELECT * FROM {self.table} WHERE {conditions}"
         self.cur.execute(query, kwargs)
         return self.cur.fetchone()
     
@@ -31,17 +18,19 @@ class DB_Connection():
         return self.cur.fetchall()
         
     def push_data(self, **kwargs):
-        
+        if not kwargs:
+            raise ValueError("push_data() requires at least one column=value pair")
         column = ", ".join(kwargs.keys())
-        placeholder = ", ".join(f"%({key})s" for key in kwargs.keys())
+        placeholder = ", ".join(f":{key}" for key in kwargs.keys())
         query = f"INSERT INTO {self.table} ({column}) VALUES ({placeholder})"
         self.cur.execute(query, kwargs)
         self.conn.commit()
         
     def del_data(self, **kwargs):
-        column = ", ".join(kwargs.keys())
-        placeholder = ", ".join(f"%({key})s" for key in kwargs.keys())
-        query = f"DELETE FROM {self.table} WHERE {column} = {placeholder}"
+        if not kwargs:
+            raise ValueError("del_data() requires at least one condition")
+        conditions = " AND ".join(f"{key} = :{key}" for key in kwargs.keys())
+        query = f"DELETE FROM {self.table} WHERE {conditions}"
         self.cur.execute(query, kwargs)
         self.conn.commit()
     
@@ -53,12 +42,11 @@ class DB_Connection():
         return self
     
     def __exit__(self, exc_type, exc, tb):
-        self.close()
+        self.conn.close()
         
 def main():
     with DB_Connection(
-        table = "cupons",
-        **conn_params
+        table = "quickitems"
     ) as db:
         print(db.fetch_all_data())
         # db.push_data(

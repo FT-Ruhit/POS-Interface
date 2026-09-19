@@ -1,8 +1,6 @@
-import os
+
 import sys
 from pathlib import Path
-
-from dotenv import load_dotenv
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
@@ -26,16 +24,6 @@ from PySide6.QtWidgets import (
 
 from db_connect import DB_Connection
 
-
-load_dotenv()
-
-CONNECTION_PARAMS = {
-    "host": os.getenv("host"),
-    "port": os.getenv("port"),
-    "dbname": os.getenv("dbname"),
-    "user": os.getenv("user"),
-    "password": os.getenv("password"),
-}
 
 
 class PriceSpinBox(QDoubleSpinBox):
@@ -215,7 +203,7 @@ class DataEntryWindow(QMainWindow):
 
     def _refresh_coupons(self):
         try:
-            with DB_Connection(table="cupons", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="cupons") as db:
                 coupons = db.fetch_all_data()
         except Exception as error:
             QMessageBox.critical(self, "Coupons Not Loaded", str(error))
@@ -233,7 +221,7 @@ class DataEntryWindow(QMainWindow):
 
     def _refresh_products(self):
         try:
-            with DB_Connection(table="products", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="products") as db:
                 products = db.fetch_all_data()
         except Exception as error:
             QMessageBox.critical(self, "Products Not Loaded", str(error))
@@ -253,7 +241,7 @@ class DataEntryWindow(QMainWindow):
 
     def _refresh_quick_items(self):
         try:
-            with DB_Connection(table="quickitems", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="quickitems") as db:
                 quick_items = db.fetch_all_data()
         except Exception as error:
             QMessageBox.critical(self, "Quick Items Not Loaded", str(error))
@@ -296,7 +284,7 @@ class DataEntryWindow(QMainWindow):
 
     def _delete_coupon(self, code):
         try:
-            with DB_Connection(table="cupons", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="cupons") as db:
                 db.del_data(cuponcode=code)
         except Exception as error:
             QMessageBox.critical(self, "Coupon Not Deleted", str(error))
@@ -305,7 +293,7 @@ class DataEntryWindow(QMainWindow):
 
     def _delete_product(self, code):
         try:
-            with DB_Connection(table="products", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="products") as db:
                 db.del_data(code=code)
         except Exception as error:
             QMessageBox.critical(self, "Product Not Deleted", str(error))
@@ -314,7 +302,7 @@ class DataEntryWindow(QMainWindow):
 
     def _delete_quick_item(self, name, price):
         try:
-            with DB_Connection(table="quickitems", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="quickitems") as db:
                 db.del_data(product_name=name)
         except Exception as error:
             QMessageBox.critical(self, "Quick Item Not Deleted", str(error))
@@ -343,7 +331,7 @@ class DataEntryWindow(QMainWindow):
             return
 
         try:
-            with DB_Connection(table="products", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="products") as db:
                 for code in codes:
                     db.del_data(code=code)
         except Exception as error:
@@ -380,7 +368,7 @@ class DataEntryWindow(QMainWindow):
             QMessageBox.warning(self, "Missing Coupon Code", "Enter a coupon code before continuing.")
             return
         try:
-            with DB_Connection(table="cupons", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="cupons") as db:
                 db.push_data(cuponcode=code, discount=self.discount_input.value())
         except Exception as error:
             QMessageBox.critical(self, "Coupon Not Added", str(error))
@@ -396,7 +384,7 @@ class DataEntryWindow(QMainWindow):
         if not self.pending_products:
             return
         try:
-            with DB_Connection(table="products", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="products") as db:
                 for pending_product in self.pending_products:
                     db.push_data(**pending_product)
         except Exception as error:
@@ -415,7 +403,7 @@ class DataEntryWindow(QMainWindow):
             return
 
         try:
-            with DB_Connection(table="quickitems", **CONNECTION_PARAMS) as db:
+            with DB_Connection(table="quickitems") as db:
                 db.push_data(product_name=name, price=float(self.quick_item_price_input.value()))
         except Exception as error:
             QMessageBox.critical(self, "Quick Item Not Added", str(error))

@@ -1,0 +1,227 @@
+/* light color tokens
+   bg:        #f3f4f6
+   surface:   #ffffff
+   surface-2: #eef2f7
+   border:    #d1d5db
+   text:      #111827
+   text-dim:  #6b7280
+   accent:    #2563eb
+   accent-strong: #1d4ed8
+   danger:    #dc2626
+*/
+
+QWidget {
+    background-color: #f3f4f6;
+    color: #111827;
+    font-family: "Segoe UI", "Inter", sans-serif;
+    font-size: 13px;
+}
+
+#panelTitle {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#productPanel {
+    background-color: #f3f4f6;
+    border-right: 1px solid #d1d5db;
+}
+
+#searchBox {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+#searchBox:focus {
+    border: 1px solid #2563eb;
+}
+
+QPushButton[class="product-tile"] {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+    font-weight: 600;
+}
+
+QPushButton[class="product-tile"]:hover {
+    background-color: #eef2f7;
+    border: 1px solid #2563eb;
+}
+
+QPushButton[class="product-tile"]:pressed {
+    background-color: #2563eb;
+    color: white;
+}
+
+#manualForm {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+#formTitle {
+    font-weight: 600;
+    color: #6b7280;
+}
+
+#customerStatusLabel {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+QLineEdit, QDoubleSpinBox, QSpinBox {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 8px;
+    min-height: 30px;
+    color: #111827;
+}
+
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button,
+QSpinBox::up-button, QSpinBox::down-button {
+    width: 28px;
+    height: 15px;
+    border-left: 1px solid #d1d5db;
+}
+
+QDoubleSpinBox::up-button, QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+}
+
+QDoubleSpinBox::up-arrow, QSpinBox::up-arrow {
+    image: url(spin_up.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QDoubleSpinBox::down-button, QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+}
+
+QDoubleSpinBox::down-arrow, QSpinBox::down-arrow {
+    image: url(spin_down.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QPushButton[class="secondary-button"] {
+    background-color: #eef2f7;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px;
+    font-weight: 600;
+}
+
+QPushButton[class="secondary-button"]:hover {
+    background-color: #e5e7eb;
+}
+
+QPushButton[class="primary-button"] {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
+    font-weight: 700;
+}
+
+QPushButton[class="primary-button"]:hover {
+    background-color: #1d4ed8;
+}
+
+QPushButton[class="danger-button"] {
+    background-color: #ffffff;
+    border: 1px solid #dc2626;
+    border-radius: 6px;
+    color: #dc2626;
+    padding: 8px;
+    font-weight: 600;
+}
+
+QPushButton[class="danger-button"]:hover {
+    background-color: #dc2626;
+    color: white;
+}
+
+#cartPanel {
+    background-color: #f3f4f6;
+}
+
+QTableWidget {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    gridline-color: #d1d5db;
+}
+
+#originalPrice {
+    color: #6b7280;
+}
+
+#discountedPrice {
+    color: #2563eb;
+    font-weight: 700;
+}
+
+QHeaderView::section {
+    background-color: #eef2f7;
+    color: #374151;
+    border: none;
+    padding: 6px;
+    font-weight: 600;
+}
+
+QPushButton[class="qty-button"] {
+    background-color: #eef2f7;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+}
+
+QPushButton[class="qty-button"]:hover {
+    background-color: #e5e7eb;
+}
+
+QPushButton[class="remove-button"] {
+    background-color: transparent;
+    border: none;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+QPushButton[class="remove-button"]:hover {
+    color: white;
+    background-color: #dc2626;
+    border-radius: 4px;
+}
+
+#totalLabel {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#purchaseButton {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+#purchaseButton:hover {
+    background-color: #1d4ed8;
+}

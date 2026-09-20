@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS quickitems (
     product_name VARCHAR(100),
     price FLOAT
 )
+CREATE TABLE IF NOT EXISTS customers(
+    name VARCHAR(50),
+    phone VARCHAR(20) UNIQUE
+)
 
 -- Sample data for products
 INSERT INTO products (code, product_name, price) VALUES

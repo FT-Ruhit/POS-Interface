@@ -415,14 +415,38 @@ class DataEntryWindow(QMainWindow):
         QMessageBox.information(self, "Quick Item Added", f"Quick item {name} was added.")
 
 
+def detect_system_color_scheme(app):
+    try:
+        style_hints = app.styleHints()
+        scheme = style_hints.colorScheme()
+        if scheme == Qt.ColorScheme.Dark:
+            return "dark"
+        if scheme == Qt.ColorScheme.Light:
+            return "light"
+    except Exception:
+        pass
+
+    return "dark"
+
+
 def load_stylesheet(app):
-    qss_path = Path(__file__).parent / "pos_style.qss"
+    theme = detect_system_color_scheme(app)
+    qss_name = "dark_style.qss" if theme == "dark" else "light_style.qss"
+    qss_path = Path(__file__).parent / qss_name
     app.setStyleSheet(qss_path.read_text())
+
+
+def connect_system_theme_listener(app):
+    try:
+        app.styleHints().colorSchemeChanged.connect(lambda _scheme: load_stylesheet(app))
+    except Exception:
+        pass
 
 
 def main():
     app = QApplication(sys.argv)
     load_stylesheet(app)
+    connect_system_theme_listener(app)
     window = DataEntryWindow()
     window.showMaximized()
     sys.exit(app.exec())

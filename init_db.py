@@ -27,6 +27,12 @@ class Init_DB:
                 price FLOAT
             )    
         """)
+        self.cur.execute("""
+            CREATE TABLE IF NOT EXISTS customers(
+                name VARCHAR(50),
+                phone VARCHAR(20) UNIQUE
+            )
+        """)
         self.conn.commit()
     def add_test_data(self):
         self.cur.execute("""

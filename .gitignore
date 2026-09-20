@@ -3,3 +3,6 @@
 /.venv
 test.py
 *.db
+/receipts
+/.pytest_cache
+/tests

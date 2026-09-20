@@ -70,6 +70,11 @@ QPushButton[class="product-tile"]:pressed {
     color: #9a9a9a;
 }
 
+#customerStatusLabel {
+    color: #9a9a9a;
+    font-size: 12px;
+}
+
 QLineEdit, QDoubleSpinBox, QSpinBox {
     background-color: #1e1e1e;
     border: 1px solid #333333;
